@@ -37,8 +37,8 @@ desde(X, Y):-desde(X, Z),  Y is Z + 1.
 
 % 1) %esDeterministico(+Automata)
 
-esDeterministico(A) :- transicionesDe(A, T), forall( member((ORIGEN,ETIQUETA,_),T), esEstadoDeterministico((ORIGEN,ETIQUETA,_),T) ).
-esEstadoDeterministico((ORIGEN,ETIQUETA,_), T) :- delete(T, (ORIGEN,ETIQUETA,_), T1), length(T,L1), length(T1,L2), L2 is (L1-1).
+esDeterministico(A) :- transicionesDe(A, T), not(transicionSimilar(T)).
+transicionSimilar(T) :- member((Origen,Etiqueta,X),T), member((Origen,Etiqueta,Y),T), X \= Y.
 
 % 2) estados(+Automata, ?Estados)
 estados(_, _).
