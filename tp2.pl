@@ -41,7 +41,9 @@ esDeterministico(A) :- transicionesDe(A, T), not(transicionSimilar(T)).
 transicionSimilar(T) :- member((Origen,Etiqueta,X),T), member((Origen,Etiqueta,Y),T), X \= Y.
 
 % 2) estados(+Automata, ?Estados)
-estados(_, _).
+estados(A, E) :-  	transicionesDe(A, T), inicialDe(A, I), finalesDe(A, Finales),
+					member(I, E), subset(Finales, E),
+					forall(member((Origen, _, Destino), T), (member(Origen, E), member(Destino, E))).
 
 % 3)esCamino(+Automata, ?EstadoInicial, ?EstadoFinal, +Camino)
 esCamino(_, _, _, _).
