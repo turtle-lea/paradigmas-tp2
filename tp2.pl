@@ -70,7 +70,12 @@ estados_aux(a(I, F, [(X, _, Y) | Ts]), Estados) :-
 
 
 % 3)esCamino(+Automata, ?EstadoInicial, ?EstadoFinal, +Camino)
-esCamino(_, _, _, _).
+esCamino(A, S1, S2, Camino) :- esNodoInicial(S1,Camino,A), caminoValido(A,S1, S2,Camino).
+
+esNodoInicial(S1,Camino,A) :- inicialDe(A,S1), nth0(0,Camino,S1).
+
+caminoValido(_,S1,S2,[X]) :- S1=S2, S2=X.
+caminoValido(A,S1,S2,[X,Y|Tail]) :- transicionesDe(A,T), S1=X, member( (X,_,Y), T), caminoValido(A,Y,S2,[Y|Tail]).
 
 % 4) ¿el predicado anterior es o no reversible con respecto a Camino y por qué?
 % Responder aquí.
