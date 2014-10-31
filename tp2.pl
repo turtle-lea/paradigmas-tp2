@@ -42,6 +42,11 @@ transicionSimilar(T) :- member((Origen,Etiqueta,X),T), member((Origen,Etiqueta,Y
 
 % 2) estados(+Automata, ?Estados)
 estados(A, Estados) :- nonvar(Estados), not((member(E,Estados),esEstadoInvalido(E,A))), not(faltaUno(A,Estados)).
+estados(a(I, Finales, T), Estados) :- 	var(Estados), 
+										E1 = [I | Finales],
+										estadosDeTransiciones(T, E2),
+										append(E1, E2, E3),
+										sort(E3, Estados).
 
 faltaUno(A, Estados) :- transicionesDe(A,T), member((Origen,_,_),T), not(member(Origen,Estados)).
 faltaUno(A, Estados) :- transicionesDe(A,T), member((_,_,Destino),T), not(member(Destino,Estados)).
@@ -49,20 +54,16 @@ faltaUno(A, Estados) :- inicialDe(A,X), not(member(X,Estados)).
 faltaUno(A, Estados) :- finalesDe(A,F), member(X,F), not(member(X,Estados)).
 
 esEstadoInvalido(E, a(Inicial,Finales,Transiciones)) :- (Inicial \= E), not(member(E,Finales)), noAparece(E,Transiciones).
+
 noAparece(E,Transiciones) :- not(member((E,_,_),Transiciones)), not(member((_,_,E),Transiciones)).
 
-estados(a(I, Finales, T), Estados) :- 	var(Estados), 
-										E1 = [I | Finales],
-										getEstados(T, E2),
-										append(E1, E2, E3),
-										sort(E3, Estados).
-
-getEstados([], []).
-getEstados([(X,_,Y) | XS], Estados) :- getEstados(XS, E), Estados = [X,Y|E].
+estadosDeTransiciones([], []).
+estadosDeTransiciones([(X,_,Y) | XS], Estados) :- estadosDeTransiciones(XS, E), Estados = [X,Y|E].
 
 
+%Solucion auxiliar de Nachito, actualmente no funciona.
 estados_aux(a(I, F, []), Estados) :- append([I], F, Estados).
-estados_aux(a(I, F, [(X, E, Y) | Ts]), Estados) :-
+estados_aux(a(I, F, [(X, _, Y) | Ts]), Estados) :-
 										estados_aux((I, F, Ts), Estados2),
 									Estados = [X, Y | Estados2].
 										
