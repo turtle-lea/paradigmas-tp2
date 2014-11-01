@@ -75,11 +75,22 @@ esCamino(A, S1, S2, Camino) :- nth0(0,Camino,S1), last(Camino,S2), caminoValido(
 caminoValido(A,[X]) :- estados(A,E), member(X,E).
 caminoValido(A,[X,Y|Tail]) :- transicionesDe(A,T), member( (X,_,Y), T), caminoValido(A,[Y|Tail]).
 
-% 4) ¿el predicado anterior es o no reversible con respecto a Camino y por qué?
-% Responder aquí.
+% 4) ¿el predicado anterior es o no reversible con respecto a Camino y ppor que?
+
+% Responder aqui.
 
 % 5) caminoDeLongitud(+Automata, +N, -Camino, -Etiquetas, ?S1, ?S2)
-caminoDeLongitud(_, _, _, _, _, _).
+
+% Reescribirlo cuando entendamos lo de ">", "is".
+caminoDeLongitud(A, 1, [X], [], X, Y) :- X=Y, estados(A,E), member(X,E).
+caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :- 
+	NmenosUno is N-1,
+	NmenosUno+1 > 1,
+	transicionesDe(A,T),
+	caminoDeLongitud(A,NmenosUno, RestoCamino, RestoEtiquetas, Svecino, S2),
+	member( (S1,E,Svecino), T),
+	Camino = [S1 | RestoCamino],
+	Etiquetas = [E | RestoEtiquetas].
 
 % 6) alcanzable(+Automata, +Estado)
 alcanzable(_, _).
