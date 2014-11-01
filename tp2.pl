@@ -109,7 +109,30 @@ nAlcanzable(A, E, Ncota) :- inicialDe(A, S1),
 												caminoDeLongitud(A, N, _, _, S1, E), !.
 
 % 7) automataValido(+Automata)
-automataValido(_).
+%chequear tienenTransicionesSalientes
+
+automataValido(A) :-
+												%tienenTransicionesSalientes(A),
+												sonAlcanzables(A).
+												%tieneFinal(A),
+												%noHayFinalesRepetidos(A),
+												%noHayTransicionesRepetidas(A).
+
+tienenTransicionesSalientes(A) :- estados(A,Es),
+																	transicionesDe(A,T),
+																	finalesDe(A,F),
+																	not( (
+																		member(E,Es),
+																		not(member(E,F)),
+																		not(member((E,_,_), T) )
+																	)).
+
+sonAlcanzables(A) :- estados(A, Es),
+											forall(
+												member(E, Es),
+												alcanzable(A, E)
+											).
+
 
 %--- NOTA: De acá en adelante se asume que los autómatas son válidos.
 
