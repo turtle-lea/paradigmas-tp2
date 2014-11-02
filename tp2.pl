@@ -110,28 +110,31 @@ nAlcanzable(A, E, Ncota) :- inicialDe(A, S1),
 
 % 7) automataValido(+Automata)
 %chequear tienenTransicionesSalientes
-
-automataValido(A) :-
-												%tienenTransicionesSalientes(A),
-												sonAlcanzables(A).
-												%tieneFinal(A),
-												%noHayFinalesRepetidos(A),
-												%noHayTransicionesRepetidas(A).
+automataValido(A) :- tienenTransicionesSalientes(A),
+										 sonAlcanzables(A),
+										 tieneFinal(A),
+										 noHayFinalesRepetidos(A),
+										 noHayTransicionesRepetidas(A).
 
 tienenTransicionesSalientes(A) :- estados(A,Es),
 																	transicionesDe(A,T),
 																	finalesDe(A,F),
-																	not( (
-																		member(E,Es),
-																		not(member(E,F)),
-																		not(member((E,_,_), T) )
-																	)).
+                                  forall( (member(E,Es), not(member(E,F))), member((E,_,_),T) ).
 
 sonAlcanzables(A) :- estados(A, Es),
 											forall(
 												member(E, Es),
 												alcanzable(A, E)
 											).
+
+tieneFinal(A) :- finalesDe(A,F), length(F,T), T > 0.
+
+noHayFinalesRepetidos(A) :- finalesDe(A,F), sinRepetidos(F).
+
+noHayTransicionesRepetidas(A) :- transicionesDe(A,T), sinRepetidos(T).
+
+%Aprovechamos que el predicado sort elimina repetidos.
+sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaOrdenada,L2), L =:= L2.
 
 
 %--- NOTA: De acá en adelante se asume que los autómatas son válidos.
