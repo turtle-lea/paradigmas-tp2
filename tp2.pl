@@ -10,7 +10,7 @@ ejemplo(7, a(s1, [s2], [(s1, a, s3), (s3, a, s3), (s3, b, s2), (s2, b, s2)])).
 ejemplo(8, a(s1, [sf], [(s1, a, s2), (s2, a, s3), (s2, b, s3), (s3, a, s1), (s3, b, s2), (s3, b, s4), (s4, f, sf)])). % No deterministico :)
 ejemplo(9, a(s1, [s1], [(s1, a, s2), (s2, b, s1)])).
 ejemplo(10, a(s1, [s10, s11],
-        [(s2, a, s3), (s4, a, s5), (s9, a, s10), (s5, d, s6), (s7, g, s8), (s15, g, s11), (s6, i, s7), (s13, l, s14), (s8, m, s9), (s12, o, s13), (s14, o, s15), (s1, p, s2), (s3, r, s4), (s2, r, s12), (s10, s, s11)])).
+        [(s2, a, s3),(s4, a, s5), (s9, a, s10), (s5, d, s6), (s7, g, s8), (s15, g, s11), (s6, i, s7), (s13, l, s14), (s8, m, s9), (s12, o, s13), (s14, o, s15), (s1, p, s2), (s3, r, s4), (s2, r, s12), (s10, s, s11)])).
 
 ejemploMalo(1, a(s1, [s2], [(s1, a, s1), (s1, b, s2), (s2, b, s2), (s2, a, s3)])). %s3 es un estado sin salida.
 ejemploMalo(2, a(s1, [sf], [(s1, a, s1), (sf, b, sf)])). %sf no es alcanzable.
@@ -86,7 +86,7 @@ caminoValido(A,[X,Y|Tail]) :- transicionesDe(A,T), member( (X,_,Y), T), caminoVa
 % 5) caminoDeLongitud(+Automata, +N, -Camino, -Etiquetas, ?S1, ?S2)
 
 % Reescribirlo cuando entendamos lo de ">", "is".
-caminoDeLongitud(A, 1, [X], [], X, Y) :- X=Y, estados(A,E), member(X,E).
+caminoDeLongitud(A, 1, [X], [], X, Y) :- X=Y, estados(A,Es), member(X,Es).
 caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :-
 	NmenosUno is N-1,
 	NmenosUno+1 > 1,
@@ -144,7 +144,17 @@ sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaO
 hayCiclo(_).
 
 % 9) reconoce(+Automata, ?Palabra)
-reconoce(_, _).
+reconoce(A, P) :- nonvar(P), inicialDe(A,I), length(P,N), palabraLongitudN(I,A,N,P), !.
+%reconoce(A,P) :- var(P), hayCiclo(A), desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
+%reconoce(A,P) :- var(P), not(hayCiclo(A)), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
+
+%Por ahora se utiliza este reconoce para testear, hasta que este implementado el hayCiclo.
+reconoce(A,P) :- var(P), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
+
+palabraLongitudN(E,A,0,[]) :- finalesDe(A,F), member(E,F).
+palabraLongitudN(E,A,N,[X|Xs]) :- N>0, transicionesDe(A,T), NmenosUno is N-1, member((E,X,Destino),T), palabraLongitudN(Destino,A,NmenosUno,Xs).
+
+
 
 % 10) PalabraMásCorta(+Automata, ?Palabra)
 palabraMasCorta(_, _).
