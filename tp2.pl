@@ -20,9 +20,6 @@ ejemploMalo(5, a(s1, [s3, s2, s3], [(s1, a, s2), (s2, b, s3)])). %Tiene un estad
 ejemploMalo(6, a(s1, [s3], [(s1, a, s2), (s2, b, s3), (s1, a, s2)])). %Tiene una transición repetida.
 ejemploMalo(7, a(s1, [], [(s1, a, s2), (s2, b, s3)])). %No tiene estados finales.
 
-%%%%%%% ejemplos propios
-
-%%%%%%%
 
 %%Proyectores
 inicialDe(a(I, _, _), I).
@@ -42,25 +39,36 @@ desde(X, Y):-desde(X, Z),  Y is Z + 1.
 % 1) %esDeterministico(+Automata)
 
 esDeterministico(A) :- transicionesDe(A, T), not(transicionSimilar(T)).
+
+%transicionSimilar(+Lista_transiciones)
 transicionSimilar(T) :- member((Origen,Etiqueta,X),T), member((Origen,Etiqueta,Y),T), X \= Y.
 
 % 2) estados(+Automata, ?Estados)
+% Es válido si ningún miembro es inválido, y no falta ninguno, cuando Estados está instanciada
 estados(A, Estados) :- nonvar(Estados), not((member(E,Estados),esEstadoInvalido(E,A))), not(faltaUno(A,Estados)).
+
+%Al final se ordena y se saca repetidos con la función sort
 estados(a(I, Finales, T), Estados) :- 	var(Estados),
 										E1 = [I | Finales],
 										estadosDeTransiciones(T, E2),
 										append(E1, E2, E3),
 										sort(E3, Estados).
 
+%faltaUno(+Automata, +Estados). Falta un estado del autómata en la lista pasada como parámetro cuando
+%no está presente el estado inicial, alguno de los finales, o algún estado descripto en las transiciones.
+
 faltaUno(A, Estados) :- transicionesDe(A,T), member((Origen,_,_),T), not(member(Origen,Estados)).
 faltaUno(A, Estados) :- transicionesDe(A,T), member((_,_,Destino),T), not(member(Destino,Estados)).
 faltaUno(A, Estados) :- inicialDe(A,X), not(member(X,Estados)).
 faltaUno(A, Estados) :- finalesDe(A,F), member(X,F), not(member(X,Estados)).
 
+%esEstadoInvalido(+Estado, +Automata)
 esEstadoInvalido(E, a(Inicial,Finales,Transiciones)) :- (Inicial \= E), not(member(E,Finales)), noAparece(E,Transiciones).
 
+%noAparece(+E, +Lista_transiciones)
 noAparece(E,Transiciones) :- not(member((E,_,_),Transiciones)), not(member((_,_,E),Transiciones)).
 
+%estadosDeTransiciones(+Lista_transiciones, +Lista_estados)
 estadosDeTransiciones([], []).
 estadosDeTransiciones([(X,_,Y) | XS], Estados) :- estadosDeTransiciones(XS, E), Estados = [X,Y|E].
 
@@ -68,16 +76,23 @@ estadosDeTransiciones([(X,_,Y) | XS], Estados) :- estadosDeTransiciones(XS, E), 
 % 3)esCamino(+Automata, ?EstadoInicial, ?EstadoFinal, +Camino)
 esCamino(A, S1, S2, Camino) :- nth0(0,Camino,S1), last(Camino,S2), caminoValido(A,Camino).
 
+%caminoValido(+Automata,+Camino)
 caminoValido(A,[X]) :- estados(A,E), member(X,E).
 caminoValido(A,[X,Y|Tail]) :- transicionesDe(A,T), member( (X,_,Y), T), caminoValido(A,[Y|Tail]).
 
 % 4) ¿el predicado anterior es o no reversible con respecto a Camino y ppor que?
-
-% Responder aqui.
+%El predicado NO es reversible respecto a camino. Prolog intenta buscar soluciones en todos los caminos posibles.
+%Cuando uno instancia únicamente el origen, y el final del camino y exige que el origen coincida con el principio
+%del camino y final con su último nodo determina infinitas listas que cumplen esta condición. Por ejemplo, una lista
+% de 2 elementos, de 3, de 4, etc. Por lo tanto el programa intenta generar cada una de estas posibilidades y
+%realizar el chequeo por cada una de ellas. La consecuencia es que el programa nunca finalice.
 
 % 5) caminoDeLongitud(+Automata, +N, -Camino, -Etiquetas, ?S1, ?S2)
 
 caminoDeLongitud(A, 1, [X], [], X, Y) :- X=Y, estados(A,Es), member(X,Es).
+
+%Unificamos NmenosUno para poder utilizar el predicado ">", que requiere 2 expresiones aritméticas.
+%Utilizamos uno u otro predicado dependiendo el valor de N.
 caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :-
 	NmenosUno is N-1,
 	NmenosUno+1 > 1,
@@ -91,18 +106,14 @@ caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :-
 
 %Disclaimer: el estado inicial no es alcanzable desde sí mismo a menos que forme parte de un ciclo, tal como dice el enunciado.
 
-%alcanzable(A, E) :- estados(A,Es),
-%										length(Es,Ncota),
-%										nAlcanzable(A, E, Ncota).
-
-%nAlcanzable(A, E, Ncota) :- inicialDe(A, S1),
-%												between(2, Ncota, N),
-%												caminoDeLongitud(A, N, _, _, S1, E), !.
-
 alcanzable(A,E) :- inicialDe(A,S1), alcanzableDesde(A,S1,E).
 
+%En el caso de haber ciclos, cada estado del grafo puede ser alcanzado a través de un camino con una cantidad de nodos menor o igual a #Nodos+1 
+%alcanzableDesde(+Automata,+Inicial,+Estado)
 alcanzableDesde(A,E1,E2) :- estados(A,Es), length(Es,L), Ncota is L+1, nAlcanzableDesde(A,E1,E2,Ncota).
 
+%nAlcanzableDesde(+Automata,+Inicial,+Estado,+NCotaSuperior
+%Los caminos a través de los cuales los nodos son alcanzables tienen por lo menos 1 transición.
 nAlcanzableDesde(A,E1,E2,Ncota) :- between(2,Ncota,N), caminoDeLongitud(A, N, _, _, E1, E2), !. 
 
 % 7) automataValido(+Automata)
@@ -112,25 +123,31 @@ automataValido(A) :- tienenTransicionesSalientes(A),
 										 noHayFinalesRepetidos(A),
 										 noHayTransicionesRepetidas(A).
 
+%tienenTransicionesSalientes(+Automata)
 tienenTransicionesSalientes(A) :- estados(A,Es),
 																	transicionesDe(A,T),
 																	finalesDe(A,F),
                                   forall( (member(E,Es), not(member(E,F))), member((E,_,_),T) ).
 
 %Chequea si todos los estados son alcanzados desde el estado inicial, salvo este último.
+%sonAlcanzables(+Automata)
 sonAlcanzables(A) :- estados(A, Es), inicialDe(A,I),
 											forall(
 												(member(E, Es), E \= I),
 												alcanzable(A, E)
 											).
 
+%tieneFinal(+Automata)
 tieneFinal(A) :- finalesDe(A,F), length(F,T), T > 0.
 
+%noHayFinalesRepetidos(+Automata)
 noHayFinalesRepetidos(A) :- finalesDe(A,F), sinRepetidos(F).
 
+%noHayTransicionesRepetidas(+Automata)
 noHayTransicionesRepetidas(A) :- transicionesDe(A,T), sinRepetidos(T).
 
 %Aprovechamos que el predicado sort elimina repetidos.
+%sinRepetidos(+Lista)
 sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaOrdenada,L2), L =:= L2.
 
 
@@ -180,5 +197,27 @@ test(12) :- ejemplo(8, A),  findall(P, palabraMasCorta(A, P), Lista), length(Lis
 test(13) :- ejemplo(10, A),  findall(P, palabraMasCorta(A, P), [[p, r, o, l, o, g]]).
 test(14) :- forall(member(X, [2, 4, 5, 6, 7, 8, 9]), (ejemplo(X, A), hayCiclo(A))).
 test(15) :- not((member(X, [1, 3, 10]), ejemplo(X, A), hayCiclo(A))).
-tests :- forall(between(1, 15, N), test(N)). %IMPORTANTE: Actualizar la cantidad total de tests para contemplar los que agreguen ustedes.
+
+%Tests propios
+test(16) :- ejemplo(10,A), esDeterministico(A).
+test(17) :- ejemplo(8,A), not(esDeterministico(A)).
+%Estados puede tener repetidos y estar desordenado, con parámetro instanciado.
+test(18) :- ejemplo(4,A), estados(A,[s2,s1,s3,s1,s2,s3]).
+%Estados puede tener no tener repetidos y estar ordenado, con parámetro instanciado.
+test(19) :- ejemplo(4,A), estados(A,[s1,s2,s3]).
+test(20) :- ejemplo(4,A), not(estados(A,[s1,s2])).
+%Estados devuelve la lista ordenada y sin repetidos
+test(21) :- ejemplo(4,A), estados(A,P), P=[s1,s2,s3].
+%El camino determina la palabra "paradigmas"
+test(22) :- ejemplo(10,A), esCamino(A,s1,s11,[s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11]).
+test(23) :- ejemplo(5, A), caminoDeLongitud(A, 3, Camino, Etiquetas, s1, s1), Camino=[s1,s1,s1], Etiquetas=[a,a].
+test(24) :- ejemplo(5, A), caminoDeLongitud(A, 2, Camino, Etiquetas, s2, X), Camino=[s2,s3], Etiquetas=[c], X=s3.
+%Estado s11 alcanzable
+test(25) :- ejemplo(10, A), alcanzable(A,s11).
+%Estado inicial no alcanzable si no hay loops
+test(26) :- ejemplo(10, A), not(alcanzable(A,s1)).
+%Estado inicial alcanzable si hay loops
+test(27) :- ejemplo(5, A), alcanzable(A,s2).
+
+tests :- forall(between(1, 27, N), test(N)). %IMPORTANTE: Actualizar la cantidad total de tests para contemplar los que agreguen ustedes.
 
