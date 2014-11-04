@@ -89,16 +89,23 @@ caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :-
 
 % 6) alcanzable(+Automata, +Estado)
 
-alcanzable(A, E) :- estados(A,Es),
-										length(Es,Ncota),
-										nAlcanzable(A, E, Ncota).
+%Disclaimer: el estado inicial no es alcanzable desde sí mismo a menos que forme parte de un ciclo, tal como dice el enunciado.
 
-nAlcanzable(A, E, Ncota) :- inicialDe(A, S1),
-												between(0, Ncota, N),
-												caminoDeLongitud(A, N, _, _, S1, E), !.
+%alcanzable(A, E) :- estados(A,Es),
+%										length(Es,Ncota),
+%										nAlcanzable(A, E, Ncota).
+
+%nAlcanzable(A, E, Ncota) :- inicialDe(A, S1),
+%												between(2, Ncota, N),
+%												caminoDeLongitud(A, N, _, _, S1, E), !.
+
+alcanzable(A,E) :- inicialDe(A,S1), alcanzableDesde(A,S1,E).
+
+alcanzableDesde(A,E1,E2) :- estados(A,Es), length(Es,L), Ncota is L+1, nAlcanzableDesde(A,E1,E2,Ncota).
+
+nAlcanzableDesde(A,E1,E2,Ncota) :- between(2,Ncota,N), caminoDeLongitud(A, N, _, _, E1, E2), !. 
 
 % 7) automataValido(+Automata)
-%chequear tienenTransicionesSalientes
 automataValido(A) :- tienenTransicionesSalientes(A),
 										 sonAlcanzables(A),
 										 tieneFinal(A),
@@ -110,9 +117,10 @@ tienenTransicionesSalientes(A) :- estados(A,Es),
 																	finalesDe(A,F),
                                   forall( (member(E,Es), not(member(E,F))), member((E,_,_),T) ).
 
-sonAlcanzables(A) :- estados(A, Es),
+%Chequea si todos los estados son alcanzados desde el estado inicial, salvo este último.
+sonAlcanzables(A) :- estados(A, Es), inicialDe(A,I),
 											forall(
-												member(E, Es),
+												(member(E, Es), E \= I),
 												alcanzable(A, E)
 											).
 
@@ -130,8 +138,12 @@ sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaO
 
 
 % 8) hayCiclo(+Automata)
-hayCiclo(A):- estados(A,Estados), length(Estados, CantEstados), Cota is CantEstados + 1,
-             caminoDeLongitud(A, Cota, _ , _, _, _), !.
+%hayCiclo(A):- estados(A,Estados), length(Estados, CantEstados), Cota is CantEstados + 1,
+%             caminoDeLongitud(A, Cota, _ , _, _, _), !.
+
+hayCiclo(A) :- estados(A, Es),
+  member(E, Es),
+  alcanzableDesde(A,E,E),!.
 
 % 9) reconoce(+Automata, ?Palabra)
 reconoce(A, P) :- nonvar(P), inicialDe(A,I), length(P,N), palabraLongitudN(I,A,N,P).
