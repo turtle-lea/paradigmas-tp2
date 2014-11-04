@@ -114,6 +114,10 @@ alcanzableDesde(A,E1,E2) :- estados(A,Es), length(Es,L), Ncota is L+1, nAlcanzab
 
 %nAlcanzableDesde(+Automata,+Inicial,+Estado,+NCotaSuperior
 %Los caminos a través de los cuales los nodos son alcanzables tienen por lo menos 1 transición.
+%Este predicado utiliza la técnica generate and test. Between actúa como generador, instanciando
+%en N los posibles valores. caminoDeLongitud actúa como filtro, utilizando como argumento
+%la variable N ya instanciada. Se utiliza el cut para optimizar la ejecución una vez que
+%el predicado evalúa a true.
 nAlcanzableDesde(A,E1,E2,Ncota) :- between(2,Ncota,N), caminoDeLongitud(A, N, _, _, E1, E2), !. 
 
 % 7) automataValido(+Automata)
@@ -155,25 +159,39 @@ sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaO
 
 
 % 8) hayCiclo(+Automata)
-%hayCiclo(A):- estados(A,Estados), length(Estados, CantEstados), Cota is CantEstados + 1,
-%             caminoDeLongitud(A, Cota, _ , _, _, _), !.
+%Se nos ocurrieron 2 soluciones. Ambas funcionan. Descomentar para probar la segunda opción. Las 2 utilizan el cut para
+%frenar el cómputo una vez que encuentran una solución.
+%Teoría de grafos. Si hay un ciclo y el autómata es válido, entonces puedo encontrar un camino de longitud CantEstados+1
+%por lo menos para un par de nodos.
+hayCiclo(A):- estados(A,Estados), length(Estados, CantEstados), Cota is CantEstados + 1,
+             caminoDeLongitud(A, Cota, _ , _, _, _), !.
 
-hayCiclo(A) :- estados(A, Es),
-  member(E, Es),
-  alcanzableDesde(A,E,E),!.
+%Esta aproximacion es la más intuitiva. Utiliza la definición de ciclo.
+%hayCiclo(A) :- estados(A, Es),
+%  member(E, Es),
+%  alcanzableDesde(A,E,E),!.
 
 % 9) reconoce(+Automata, ?Palabra)
 reconoce(A, P) :- nonvar(P), inicialDe(A,I), length(P,N), palabraLongitudN(I,A,N,P).
+%Cuando la variable no está instanciada, utilizamos la técnica generate and test.
+%En el caso de que haya ciclos, usamos como generador el predicado "desde", comenzando con 0 (palabra vacía), ya que deben encontrarse
+%infinitas palabras.
+%En el caso de no haber ciclos, utilizamos como generador "between", ya que la longitud de las posibles palabras está acotada
+%por la cantidad de transiciones.
 reconoce(A,P) :- var(P), hayCiclo(A), desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 reconoce(A,P) :- var(P), not(hayCiclo(A)), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 
-
+%palabraLongitudN(+Estado,+Automata,+N,?Palabra)
 palabraLongitudN(E,A,0,[]) :- finalesDe(A,F), member(E,F).
 palabraLongitudN(E,A,N,[X|Xs]) :- N>0, transicionesDe(A,T), NmenosUno is N-1, member((E,X,Destino),T), palabraLongitudN(Destino,A,NmenosUno,Xs).
 
 % 10) PalabraMásCorta(+Automata, ?Palabra)
+%Encuentra todas las palabras de mínima longitud.
 palabraMasCorta(A, P) :- ejemploPalabraMasCorta(A,X), length(X,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 
+%ejemploPalabraMasCorta(+Automata,-Palabra)
+%encuentra la palabra de minima longitud posible y la instancia en P. Utiliza el método generate and test, empezando por la 
+%palabra vacía, buscando secuencias progresivamente más grandes. Frena al encontrar una.
 ejemploPalabraMasCorta(A,P) :- desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P), !.
 
 %-----------------
@@ -218,6 +236,16 @@ test(25) :- ejemplo(10, A), alcanzable(A,s11).
 test(26) :- ejemplo(10, A), not(alcanzable(A,s1)).
 %Estado inicial alcanzable si hay loops
 test(27) :- ejemplo(5, A), alcanzable(A,s2).
+%Se reconoce palabra vacía si el inicial es un final.
+test(28) :- ejemplo(2,A), reconoce(A,[]).
+%Se reconoce palabra vacía si el inicial NO es un final.
+test(29) :- ejemplo(10,A), not(reconoce(A,[])).
+%Se reconocen palabras semi-instanciadas
+test(30) :- ejemplo(10,A), reconoce(A,[X1,X2,X3,X4,X5,X6]), P=[X1,X2,X3,X4,X5,X6], P=[p,r,o,l,o,g].
+%Reconoce todas las palabras
+test(31) :- ejemplo(10, A),  findall(P, reconoce(A, P), [[p,r,o,l,o,g],[p,a,r,a,d,i,g,m,a],[p,a,r,a,d,i,g,m,a,s]]).
 
-tests :- forall(between(1, 27, N), test(N)). %IMPORTANTE: Actualizar la cantidad total de tests para contemplar los que agreguen ustedes.
+
+tests :- forall(between(1, 31, N), test(N)). %IMPORTANTE: Actualizar la cantidad total de tests para contemplar los que agreguen ustedes.
+
 
