@@ -44,7 +44,7 @@ esDeterministico(A) :- transicionesDe(A, T), not(transicionSimilar(T)).
 transicionSimilar(T) :- member((Origen,Etiqueta,X),T), member((Origen,Etiqueta,Y),T), X \= Y.
 
 % 2) estados(+Automata, ?Estados)
-% Es válido si ningún miembro es inválido, y no falta ninguno, cuando Estados está instanciada
+% Es válido si ningún estado de la lista pasada como parámetro es inválido, y no falta ninguno, cuando Estados está instanciada
 estados(A, Estados) :- nonvar(Estados), not((member(E,Estados),esEstadoInvalido(E,A))), not(faltaUno(A,Estados)).
 
 %Al final se ordena y se saca repetidos con la función sort
@@ -68,7 +68,7 @@ esEstadoInvalido(E, a(Inicial,Finales,Transiciones)) :- (Inicial \= E), not(memb
 %noAparece(+E, +Lista_transiciones)
 noAparece(E,Transiciones) :- not(member((E,_,_),Transiciones)), not(member((_,_,E),Transiciones)).
 
-%estadosDeTransiciones(+Lista_transiciones, +Lista_estados)
+%estadosDeTransiciones(+Lista_transiciones, -Lista_estados)
 estadosDeTransiciones([], []).
 estadosDeTransiciones([(X,_,Y) | XS], Estados) :- estadosDeTransiciones(XS, E), Estados = [X,Y|E].
 
@@ -85,7 +85,13 @@ caminoValido(A,[X,Y|Tail]) :- transicionesDe(A,T), member( (X,_,Y), T), caminoVa
 %Cuando uno instancia únicamente el origen, y el final del camino y exige que el origen coincida con el principio
 %del camino y final con su último nodo determina infinitas listas que cumplen esta condición. Por ejemplo, una lista
 % de 2 elementos, de 3, de 4, etc. Por lo tanto el programa intenta generar cada una de estas posibilidades y
-%realizar el chequeo por cada una de ellas. La consecuencia es que el programa nunca finalice.
+%realizar el chequeo por cada una de ellas. La consecuencia es que el programa encuentra todas las soluciones,
+%pero nunca finaliza. Este funcionamiento es correcto para autómatas con ciclos, pero incorrecto para autómatas
+%que generean un número finito de palabras.
+%Es posible agregar un cut (!) al final para que esto no suceda. 
+%esCamino(A, S1, S2, Camino) :- nth0(0,Camino,S1), last(Camino,S2), caminoValido(A,Camino),!.
+%La consecuencia es que en el caso de que
+%exista un camino entre los estados S1 y S2, se instancie C únicamente en el de longitud menor.
 
 % 5) caminoDeLongitud(+Automata, +N, -Camino, -Etiquetas, ?S1, ?S2)
 
