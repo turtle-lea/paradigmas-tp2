@@ -65,14 +65,6 @@ estadosDeTransiciones([], []).
 estadosDeTransiciones([(X,_,Y) | XS], Estados) :- estadosDeTransiciones(XS, E), Estados = [X,Y|E].
 
 
-%Solucion auxiliar de Nachito, actualmente no funciona.
-estados_aux(a(I, F, []), Estados) :- append([I], F, Estados).
-estados_aux(a(I, F, [(X, _, Y) | Ts]), Estados) :-
-										estados_aux((I, F, Ts), Estados2),
-									Estados = [X, Y | Estados2].
-
-
-
 % 3)esCamino(+Automata, ?EstadoInicial, ?EstadoFinal, +Camino)
 esCamino(A, S1, S2, Camino) :- nth0(0,Camino,S1), last(Camino,S2), caminoValido(A,Camino).
 
@@ -85,7 +77,6 @@ caminoValido(A,[X,Y|Tail]) :- transicionesDe(A,T), member( (X,_,Y), T), caminoVa
 
 % 5) caminoDeLongitud(+Automata, +N, -Camino, -Etiquetas, ?S1, ?S2)
 
-% Reescribirlo cuando entendamos lo de ">", "is".
 caminoDeLongitud(A, 1, [X], [], X, Y) :- X=Y, estados(A,Es), member(X,Es).
 caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :-
 	NmenosUno is N-1,
@@ -97,8 +88,6 @@ caminoDeLongitud(A, N, Camino, Etiquetas, S1, S2) :-
 	Etiquetas = [E | RestoEtiquetas].
 
 % 6) alcanzable(+Automata, +Estado)
-
-% Revisar el cut.
 
 alcanzable(A, E) :- estados(A,Es),
 										length(Es,Ncota),
@@ -141,15 +130,14 @@ sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaO
 
 
 % 8) hayCiclo(+Automata)
-hayCiclo(_).
+hayCiclo(A):- estados(A,Estados), length(Estados, CantEstados), Cota is CantEstados + 1,
+             caminoDeLongitud(A, Cota, _ , _, _, _), !.
 
 % 9) reconoce(+Automata, ?Palabra)
 reconoce(A, P) :- nonvar(P), inicialDe(A,I), length(P,N), palabraLongitudN(I,A,N,P).
-%reconoce(A,P) :- var(P), hayCiclo(A), desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
-%reconoce(A,P) :- var(P), not(hayCiclo(A)), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
+reconoce(A,P) :- var(P), hayCiclo(A), desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
+reconoce(A,P) :- var(P), not(hayCiclo(A)), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 
-%Por ahora se utiliza este reconoce para testear, hasta que este implementado el hayCiclo.
-reconoce(A,P) :- var(P), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 
 palabraLongitudN(E,A,0,[]) :- finalesDe(A,F), member(E,F).
 palabraLongitudN(E,A,N,[X|Xs]) :- N>0, transicionesDe(A,T), NmenosUno is N-1, member((E,X,Destino),T), palabraLongitudN(Destino,A,NmenosUno,Xs).
