@@ -144,7 +144,7 @@ sinRepetidos(Lista) :- length(Lista,L), sort(Lista,ListaOrdenada), length(ListaO
 hayCiclo(_).
 
 % 9) reconoce(+Automata, ?Palabra)
-reconoce(A, P) :- nonvar(P), inicialDe(A,I), length(P,N), palabraLongitudN(I,A,N,P), !.
+reconoce(A, P) :- nonvar(P), inicialDe(A,I), length(P,N), palabraLongitudN(I,A,N,P).
 %reconoce(A,P) :- var(P), hayCiclo(A), desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 %reconoce(A,P) :- var(P), not(hayCiclo(A)), transicionesDe(A,T), length(T,L), between(0,L,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
 
@@ -154,10 +154,10 @@ reconoce(A,P) :- var(P), transicionesDe(A,T), length(T,L), between(0,L,N), inici
 palabraLongitudN(E,A,0,[]) :- finalesDe(A,F), member(E,F).
 palabraLongitudN(E,A,N,[X|Xs]) :- N>0, transicionesDe(A,T), NmenosUno is N-1, member((E,X,Destino),T), palabraLongitudN(Destino,A,NmenosUno,Xs).
 
-
-
 % 10) PalabraMásCorta(+Automata, ?Palabra)
-palabraMasCorta(_, _).
+palabraMasCorta(A, P) :- ejemploPalabraMasCorta(A,X), length(X,N), inicialDe(A,I), palabraLongitudN(I,A,N,P).
+
+ejemploPalabraMasCorta(A,P) :- desde(0,N), inicialDe(A,I), palabraLongitudN(I,A,N,P), !.
 
 %-----------------
 %----- Tests -----
